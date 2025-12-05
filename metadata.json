@@ -1,0 +1,8 @@
+{
+  "name": "Secret11 Skincare",
+  "description": "AI-powered, ingredient-first skincare tailored for Indian skin.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
