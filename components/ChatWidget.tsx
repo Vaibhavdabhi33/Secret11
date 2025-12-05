@@ -45,7 +45,7 @@ const ChatWidget: React.FC = () => {
     <>
       <button 
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-8 right-8 p-4 bg-white text-black rounded-full shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-110 transition-all duration-300 z-40 group ${isOpen ? 'translate-y-24 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
+        className={`fixed bottom-24 md:bottom-8 right-8 p-4 bg-white text-black rounded-full shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-110 transition-all duration-300 z-40 group ${isOpen ? 'translate-y-24 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
       >
         <MessageSquare className="h-6 w-6 group-hover:rotate-12 transition-transform" />
         <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -54,7 +54,7 @@ const ChatWidget: React.FC = () => {
         </span>
       </button>
 
-      <div className={`fixed bottom-8 right-8 w-full max-w-[380px] bg-[#080808] rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden border border-white/10 h-[600px] transition-all duration-500 origin-bottom-right ${isOpen ? 'scale-100 opacity-100' : 'scale-90 opacity-0 pointer-events-none'}`}>
+      <div className={`fixed bottom-24 md:bottom-8 right-8 w-[calc(100%-4rem)] md:w-full max-w-[380px] bg-[#080808] rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden border border-white/10 h-[500px] md:h-[600px] transition-all duration-500 origin-bottom-right ${isOpen ? 'scale-100 opacity-100' : 'scale-90 opacity-0 pointer-events-none'}`}>
           {/* Header */}
           <div className="bg-[#111] p-5 flex justify-between items-center text-white border-b border-white/5 relative overflow-hidden">
              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>

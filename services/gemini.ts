@@ -18,8 +18,10 @@ export const fileToGenerativePart = async (file: File): Promise<string> => {
 
 // MOCK SKIN ANALYSIS ENGINE
 export const analyzeSkinImage = async (base64Image: string, mimeType: string): Promise<string> => {
-  // Simulate network delay for realism (2.5 seconds)
-  await new Promise(resolve => setTimeout(resolve, 2500));
+  console.log("[Secret11] Offline AI Engine: Analyzing skin biometrics...");
+  
+  // Simulate network delay for realism (Reduced to 1.5s for snappy demo)
+  await new Promise(resolve => setTimeout(resolve, 1500));
 
   // Generate randomized but realistic skin metrics
   const randomScore = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -71,8 +73,8 @@ export const analyzeSkinImage = async (base64Image: string, mimeType: string): P
 
 // MOCK CHATBOT ENGINE
 export const chatWithSkincareBot = async (message: string, history: any[]): Promise<string> => {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Simulate network delay (Reduced to 800ms)
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     const lowerMsg = message.toLowerCase();
 
