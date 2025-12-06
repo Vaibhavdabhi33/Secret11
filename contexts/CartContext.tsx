@@ -9,6 +9,7 @@ export interface CartItem extends Product {
 interface CartContextType {
   cart: CartItem[];
   addToCart: (product: Product) => void;
+  addMultipleToCart: (products: Product[]) => void;
   removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
   totalPrice: number;
@@ -36,6 +37,25 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsCartOpen(true);
   };
 
+  const addMultipleToCart = (products: Product[]) => {
+      setCart(prev => {
+          let newCart = [...prev];
+          products.forEach(product => {
+              const existingIndex = newCart.findIndex(item => item.id === product.id);
+              if (existingIndex > -1) {
+                  newCart[existingIndex] = { 
+                      ...newCart[existingIndex], 
+                      quantity: newCart[existingIndex].quantity + 1 
+                  };
+              } else {
+                  newCart.push({ ...product, quantity: 1 });
+              }
+          });
+          return newCart;
+      });
+      setIsCartOpen(true);
+  };
+
   const removeFromCart = (productId: number) => {
     setCart(prev => prev.filter(item => item.id !== productId));
   };
@@ -54,7 +74,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, totalPrice, isCartOpen, setIsCartOpen, cartCount }}>
+    <CartContext.Provider value={{ cart, addToCart, addMultipleToCart, removeFromCart, updateQuantity, totalPrice, isCartOpen, setIsCartOpen, cartCount }}>
       {children}
     </CartContext.Provider>
   );

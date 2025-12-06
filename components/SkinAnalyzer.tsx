@@ -1,7 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, AlertCircle, ScanLine, Upload, Sparkles, Activity, Droplets, Sun, Moon, Zap, User, Fingerprint, RefreshCw } from 'lucide-react';
+import { Camera, AlertCircle, ScanLine, Upload, Sparkles, Activity, Droplets, Sun, Moon, Zap, User, Fingerprint, RefreshCw, ShoppingBag, ArrowRight, Layers, TrendingUp } from 'lucide-react';
 import { analyzeSkinImage, fileToGenerativePart } from '../services/gemini';
+import { useCart } from '../contexts/CartContext';
+import { products } from './ProductList';
+import { Product } from '../types';
 
 interface AnalysisData {
   overallScore: number;
@@ -23,24 +26,58 @@ interface AnalysisData {
   keyIngredients: string[];
 }
 
+const FaceMeshOverlay = () => (
+    <div className="absolute inset-0 z-20 pointer-events-none opacity-60">
+        {/* Central Axis */}
+        <div className="absolute left-1/2 top-[10%] bottom-[10%] w-[1px] bg-cyan-500/50"></div>
+        <div className="absolute top-1/2 left-[20%] right-[20%] h-[1px] bg-cyan-500/50"></div>
+        
+        {/* Orbital Circles (Eyes) */}
+        <div className="absolute top-[35%] left-[30%] w-[15%] pt-[15%] border border-cyan-400 rounded-full animate-pulse shadow-[0_0_10px_#22d3ee]"></div>
+        <div className="absolute top-[35%] right-[30%] w-[15%] pt-[15%] border border-cyan-400 rounded-full animate-pulse shadow-[0_0_10px_#22d3ee]"></div>
+        
+        {/* Jawline Tracking */}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d="M 30 60 Q 50 90 70 60" fill="none" stroke="cyan" strokeWidth="0.5" strokeDasharray="2 2" className="animate-[dash_10s_linear_infinite]" />
+            <path d="M 20 40 L 30 35 L 40 40" fill="none" stroke="cyan" strokeWidth="0.2" />
+            <path d="M 60 40 L 70 35 L 80 40" fill="none" stroke="cyan" strokeWidth="0.2" />
+        </svg>
+
+        {/* Dynamic Nodes */}
+        {[...Array(6)].map((_, i) => (
+            <div 
+                key={i}
+                className="absolute w-1.5 h-1.5 bg-blue-500 rounded-full"
+                style={{
+                    top: `${30 + Math.random() * 40}%`,
+                    left: `${30 + Math.random() * 40}%`,
+                    animation: `ping 1.5s infinite ${i * 0.2}s`
+                }}
+            ></div>
+        ))}
+    </div>
+);
+
 const SkinAnalyzer: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [loading, setLoading] = useState(false);
   const [scanStatus, setScanStatus] = useState("Initializing...");
   const [error, setError] = useState<string | null>(null);
+  const [activeOverlay, setActiveOverlay] = useState<"none" | "oil" | "acne" | "pigmentation">("none");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addToCart, addMultipleToCart } = useCart();
 
   // Simulated scanning sequence logs
   useEffect(() => {
     if (loading) {
       const statuses = [
         "Detecting Face Mesh...",
-        "Calibrating Light Levels...",
+        "Mapping T-Zone Oil Levels...",
         "Analyzing Pore Structure...",
-        "Measuring Pigmentation...",
-        "Calculating Skin Age...",
-        "Generating Report..."
+        "Measuring Pigmentation Depth...",
+        "Calculating Biological Skin Age...",
+        "Compiling Dermatological Report..."
       ];
       let i = 0;
       const interval = setInterval(() => {
@@ -83,6 +120,31 @@ const SkinAnalyzer: React.FC = () => {
     setSelectedImage(null);
     setAnalysisData(null);
     setError(null);
+    setActiveOverlay("none");
+  };
+
+  const getRecommendedProduct = (step: string) => {
+      // Find exact product match from the real ProductList
+      if (step.includes("Niacinamide")) return products.find(p => p.name.includes("Niacinamide"));
+      if (step.includes("SPF")) return products.find(p => p.name.includes("SPF"));
+      if (step.includes("Acne") || step.includes("Salicylic")) return products.find(p => p.name.includes("Acne"));
+      return null;
+  };
+
+  const handleAddBundle = () => {
+    if (!analysisData) return;
+    const bundle: Product[] = [];
+    
+    // Add logic to pick distinct products from routine
+    const allSteps = [...analysisData.routine.morning, ...analysisData.routine.evening];
+    allSteps.forEach(step => {
+        const prod = getRecommendedProduct(step);
+        if (prod && !bundle.find(p => p.id === prod.id)) {
+            bundle.push(prod);
+        }
+    });
+
+    addMultipleToCart(bundle);
   };
 
   return (
@@ -101,7 +163,7 @@ const SkinAnalyzer: React.FC = () => {
             </div>
         )}
 
-        <div className="flex flex-col gap-8 items-center justify-center max-w-6xl mx-auto">
+        <div className="flex flex-col gap-8 items-center justify-center max-w-7xl mx-auto">
           
           {/* STATE 1: UPLOAD / LOADING */}
           {!analysisData && (
@@ -134,19 +196,12 @@ const SkinAnalyzer: React.FC = () => {
                                     {loading && (
                                         <>
                                             <div className="absolute inset-0 bg-blue-500/10 z-10"></div>
-                                            {/* Grid Overlay */}
-                                            <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.1)_1px,transparent_1px)] bg-[size:40px_40px] z-10"></div>
+                                            {/* Biometric Face Mesh */}
+                                            <FaceMeshOverlay />
                                             
                                             {/* Moving Scan Line */}
-                                            <div className="absolute top-0 left-0 w-full h-1 bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,1)] z-20 animate-[scan_2s_ease-in-out_infinite]"></div>
+                                            <div className="absolute top-0 left-0 w-full h-1 bg-cyan-400 shadow-[0_0_20px_rgba(34,211,238,1)] z-30 animate-[scan_2s_ease-in-out_infinite]"></div>
                                             
-                                            {/* Central Target */}
-                                            <div className="absolute inset-0 flex items-center justify-center z-20">
-                                                <div className="w-64 h-64 border-2 border-cyan-500/50 rounded-full animate-ping opacity-20"></div>
-                                                <div className="absolute w-48 h-48 border border-blue-500/80 rounded-full"></div>
-                                                <div className="absolute w-52 h-52 border-t-2 border-b-2 border-cyan-400 rounded-full animate-spin"></div>
-                                            </div>
-
                                             {/* Status Text */}
                                             <div className="absolute bottom-10 bg-black/60 backdrop-blur border border-cyan-500/30 px-6 py-2 rounded-full z-30">
                                                 <p className="font-mono text-cyan-400 text-xs tracking-widest flex items-center gap-3">
@@ -182,129 +237,179 @@ const SkinAnalyzer: React.FC = () => {
           )}
 
           {/* STATE 2: RESULTS DASHBOARD */}
-          {analysisData && (
+          {analysisData && selectedImage && (
               <div className="w-full animate-fade-in-up">
                   {/* Dashboard Header */}
-                  <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 bg-black/40 backdrop-blur-xl p-6 rounded-2xl border border-white/10">
+                  <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 bg-black/40 backdrop-blur-xl p-6 rounded-2xl border border-white/10 shadow-xl">
                       <div>
                           <h2 className="text-3xl font-bold text-white tracking-tight">Analysis Complete</h2>
                           <p className="text-gray-400 text-sm">Session ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
                       </div>
-                      <button onClick={resetScan} className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold uppercase tracking-widest text-white transition">
-                          <RefreshCw className="h-4 w-4" /> New Scan
-                      </button>
+                      <div className="flex gap-3">
+                         <button onClick={resetScan} className="flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold uppercase tracking-widest text-white transition">
+                            <RefreshCw className="h-4 w-4" /> New Scan
+                        </button>
+                      </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                       
-                      {/* COL 1: Main Stats */}
-                      <div className="space-y-6">
-                          {/* Overall Score Card */}
-                          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 relative overflow-hidden group">
-                               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
-                               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2"><Activity className="h-4 w-4"/> Health Score</h3>
-                               
-                               <div className="flex items-center justify-center mb-6 relative">
-                                   <svg className="w-40 h-40 transform -rotate-90">
-                                       <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-gray-800" />
-                                       <circle 
-                                        cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="10" fill="transparent" 
-                                        strokeDasharray={440} 
-                                        strokeDashoffset={440 - (440 * analysisData.overallScore) / 100}
-                                        className={`text-blue-500 transition-all duration-1000 ease-out`} 
-                                       />
-                                   </svg>
-                                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                       <span className="text-5xl font-bold text-white tracking-tighter">{analysisData.overallScore}</span>
-                                       <span className="text-[10px] text-blue-400 uppercase font-bold tracking-widest">Excellent</span>
-                                   </div>
-                               </div>
-                               
-                               <div className="flex justify-between items-center border-t border-white/5 pt-4">
-                                   <div className="text-center">
-                                       <p className="text-[10px] text-gray-500 uppercase tracking-wider">Skin Age</p>
-                                       <p className="text-xl font-bold text-white">{analysisData.skinAge}</p>
-                                   </div>
-                                   <div className="w-px h-8 bg-white/10"></div>
-                                   <div className="text-center">
-                                       <p className="text-[10px] text-gray-500 uppercase tracking-wider">Type</p>
-                                       <p className="text-xl font-bold text-white">{analysisData.skinType}</p>
-                                   </div>
-                               </div>
-                          </div>
+                      {/* COL 1: The Face (Interactive) - SPAN 4 */}
+                      <div className="lg:col-span-4 space-y-6">
+                          <div className="relative rounded-3xl overflow-hidden border border-white/10 h-[500px] group bg-black">
+                                <img src={selectedImage} className="w-full h-full object-cover opacity-80" alt="Analyzed Face" />
+                                
+                                {/* HEATMAP OVERLAYS */}
+                                {activeOverlay === "oil" && (
+                                    <div className="absolute inset-0 mix-blend-overlay opacity-80 bg-[radial-gradient(circle_at_50%_40%,rgba(255,255,0,0.6)_10%,transparent_50%),radial-gradient(ellipse_at_50%_30%,rgba(255,255,0,0.5)_20%,transparent_60%)] animate-pulse"></div>
+                                )}
+                                {activeOverlay === "acne" && (
+                                    <div className="absolute inset-0 mix-blend-color-dodge opacity-60 bg-[radial-gradient(circle_at_30%_50%,rgba(255,0,0,0.5)_5%,transparent_30%),radial-gradient(circle_at_70%_50%,rgba(255,0,0,0.5)_5%,transparent_30%),radial-gradient(circle_at_50%_80%,rgba(255,0,0,0.5)_10%,transparent_40%)]"></div>
+                                )}
+                                {activeOverlay === "pigmentation" && (
+                                    <div className="absolute inset-0 mix-blend-multiply opacity-50 bg-[radial-gradient(circle_at_20%_40%,rgba(139,69,19,0.8)_10%,transparent_40%),radial-gradient(circle_at_80%_40%,rgba(139,69,19,0.8)_10%,transparent_40%)]"></div>
+                                )}
 
-                          {/* Key Ingredients */}
-                          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 relative overflow-hidden">
-                              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Fingerprint className="h-4 w-4"/> Prescription</h3>
-                              <div className="flex flex-wrap gap-2">
-                                  {analysisData.keyIngredients?.map((ing, i) => (
-                                      <span key={i} className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded text-xs font-mono">
-                                          {ing}
-                                      </span>
-                                  ))}
-                              </div>
+                                {/* Controls */}
+                                <div className="absolute bottom-6 left-6 right-6 flex justify-center gap-2">
+                                    <button 
+                                        onClick={() => setActiveOverlay(activeOverlay === "oil" ? "none" : "oil")}
+                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${activeOverlay === "oil" ? "bg-yellow-500 text-black border-yellow-500" : "bg-black/60 text-white border-white/20 hover:bg-white/10"}`}
+                                    >
+                                        Oil Zones
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveOverlay(activeOverlay === "acne" ? "none" : "acne")}
+                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${activeOverlay === "acne" ? "bg-red-500 text-white border-red-500" : "bg-black/60 text-white border-white/20 hover:bg-white/10"}`}
+                                    >
+                                        Infection
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveOverlay(activeOverlay === "pigmentation" ? "none" : "pigmentation")}
+                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${activeOverlay === "pigmentation" ? "bg-orange-500 text-white border-orange-500" : "bg-black/60 text-white border-white/20 hover:bg-white/10"}`}
+                                    >
+                                        Spots
+                                    </button>
+                                </div>
                           </div>
                       </div>
 
-                      {/* COL 2: Metrics Breakdown */}
-                      <div className="lg:col-span-2 space-y-6">
+                      {/* COL 2: Data & Prescription - SPAN 8 */}
+                      <div className="lg:col-span-8 space-y-6">
+                          
+                          {/* Top Row: Score & Projection */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                               {/* Current Health */}
+                               <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex items-center justify-between relative overflow-hidden">
+                                   <div className="absolute left-0 top-0 w-1 h-full bg-blue-500"></div>
+                                   <div>
+                                       <div className="flex items-center gap-2 mb-1">
+                                            <Activity className="h-4 w-4 text-blue-400" />
+                                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Current Score</h3>
+                                       </div>
+                                       <p className="text-4xl font-bold text-white">{analysisData.overallScore}</p>
+                                       <p className="text-xs text-gray-500 mt-1">Skin Age: <span className="text-white">{analysisData.skinAge}</span></p>
+                                   </div>
+                                   <div className="text-right">
+                                       <div className="text-2xl font-bold text-blue-400">{analysisData.skinType}</div>
+                                       <div className="text-[10px] text-gray-500 uppercase tracking-widest">Detected Type</div>
+                                   </div>
+                               </div>
+
+                               {/* Future Projection */}
+                               <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex items-center justify-between relative overflow-hidden group">
+                                   <div className="absolute left-0 top-0 w-1 h-full bg-green-500"></div>
+                                   <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                   <div>
+                                       <div className="flex items-center gap-2 mb-1">
+                                            <TrendingUp className="h-4 w-4 text-green-400" />
+                                            <h3 className="text-xs font-bold text-green-400 uppercase tracking-widest">Potential Score</h3>
+                                       </div>
+                                       <p className="text-4xl font-bold text-white">94</p>
+                                       <p className="text-xs text-green-300/70 mt-1">with 8-Week Protocol</p>
+                                   </div>
+                                   <div className="h-12 w-24 flex items-end gap-1">
+                                       <div className="w-1/3 bg-gray-700 h-[60%] rounded-t"></div>
+                                       <div className="w-1/3 bg-blue-600 h-[75%] rounded-t"></div>
+                                       <div className="w-1/3 bg-green-500 h-[95%] rounded-t animate-pulse"></div>
+                                   </div>
+                               </div>
+                          </div>
+
                           {/* AI Summary */}
-                          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 relative overflow-hidden">
-                               <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-blue-500 to-purple-500"></div>
-                               <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-2 flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-400"/> AI Diagnosis</h3>
-                               <p className="text-gray-300 leading-relaxed font-light text-sm pl-4">
+                          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
+                               <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2"><Sparkles className="h-4 w-4 text-purple-400"/> Zonal Analysis</h3>
+                               <p className="text-gray-300 leading-relaxed font-light text-sm mb-6 border-l-2 border-purple-500 pl-4">
                                    {analysisData.summary}
                                </p>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {/* Detailed Metrics */}
-                              <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
-                                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2"><ScanLine className="h-4 w-4"/> Detailed Metrics</h3>
-                                  <div className="space-y-5">
-                                      {Object.entries(analysisData.metrics).map(([key, rawValue]) => {
-                                          const value = rawValue as number;
-                                          return (
-                                          <div key={key}>
-                                              <div className="flex justify-between text-xs mb-2">
-                                                  <span className="text-white capitalize font-medium">{key}</span>
-                                                  <span className="text-gray-400 font-mono">{value}/100</span>
-                                              </div>
-                                              <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                                                  <div 
-                                                    className={`h-full rounded-full ${value > 70 ? 'bg-green-500' : value > 40 ? 'bg-yellow-500' : 'bg-red-500'}`} 
-                                                    style={{width: `${value}%`}}
-                                                  ></div>
-                                              </div>
+                               
+                               {/* Detailed Metrics Bars */}
+                               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                  {Object.entries(analysisData.metrics).map(([key, rawValue]) => {
+                                      const value = rawValue as number;
+                                      return (
+                                      <div key={key}>
+                                          <div className="flex justify-between text-[10px] mb-1 font-mono uppercase text-gray-400">
+                                              <span>{key}</span>
+                                              <span>{value}%</span>
                                           </div>
-                                      )})}
-                                  </div>
-                              </div>
-
-                              {/* Routine */}
-                              <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col">
-                                   <div className="mb-6">
-                                       <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest mb-3 flex items-center gap-2"><Sun className="h-4 w-4"/> Morning</h3>
-                                       <ul className="space-y-2">
-                                           {analysisData.routine.morning.map((step, i) => (
-                                               <li key={i} className="text-xs text-gray-400 flex gap-2">
-                                                   <span className="text-gray-600 font-mono">0{i+1}</span> {step}
-                                               </li>
-                                           ))}
-                                       </ul>
-                                   </div>
-                                   <div className="pt-6 border-t border-white/5">
-                                       <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Moon className="h-4 w-4"/> Evening</h3>
-                                       <ul className="space-y-2">
-                                           {analysisData.routine.evening.map((step, i) => (
-                                               <li key={i} className="text-xs text-gray-400 flex gap-2">
-                                                   <span className="text-gray-600 font-mono">0{i+1}</span> {step}
-                                               </li>
-                                           ))}
-                                       </ul>
-                                   </div>
-                              </div>
+                                          <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                              <div 
+                                                className={`h-full rounded-full transition-all duration-1000 ease-out ${value > 70 ? 'bg-green-500' : value > 40 ? 'bg-yellow-500' : 'bg-red-500'}`} 
+                                                style={{width: `${value}%`}}
+                                              ></div>
+                                          </div>
+                                      </div>
+                                  )})}
+                               </div>
                           </div>
+
+                          {/* The Protocol Bundle */}
+                          <div className="bg-gradient-to-r from-blue-900/10 to-purple-900/10 backdrop-blur-xl border border-white/10 rounded-3xl p-8 relative">
+                               <div className="absolute top-0 right-0 p-4 opacity-10">
+                                   <Layers className="h-24 w-24 text-white" />
+                               </div>
+                               
+                               <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                   Your Prescribed Protocol 
+                                   <span className="bg-blue-600 text-[10px] px-2 py-0.5 rounded text-white uppercase tracking-widest">AM / PM</span>
+                               </h3>
+
+                               <div className="space-y-4 mb-8">
+                                   <div className="flex gap-4 items-start">
+                                       <div className="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 shrink-0 border border-yellow-500/20"><Sun className="h-4 w-4"/></div>
+                                       <div>
+                                           <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wide mb-1">Morning Routine</h4>
+                                           <p className="text-sm text-gray-400 font-light">{analysisData.routine.morning.join(" → ")}</p>
+                                       </div>
+                                   </div>
+                                   <div className="flex gap-4 items-start">
+                                       <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 shrink-0 border border-indigo-500/20"><Moon className="h-4 w-4"/></div>
+                                       <div>
+                                           <h4 className="text-xs font-bold text-gray-300 uppercase tracking-wide mb-1">Evening Routine</h4>
+                                           <p className="text-sm text-gray-400 font-light">{analysisData.routine.evening.join(" → ")}</p>
+                                       </div>
+                                   </div>
+                               </div>
+
+                               <div className="pt-6 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+                                   <div>
+                                       <p className="text-xs text-gray-500 font-mono mb-1">TOTAL REGIMEN VALUE</p>
+                                       <div className="flex items-end gap-2">
+                                           <span className="text-2xl font-bold text-white">₹1,999</span>
+                                           <span className="text-sm text-gray-500 line-through mb-1">₹2,397</span>
+                                           <span className="text-xs text-green-400 font-bold mb-1 ml-1">SAVE 15%</span>
+                                       </div>
+                                   </div>
+                                   <button 
+                                    onClick={handleAddBundle}
+                                    className="w-full md:w-auto bg-white text-black hover:bg-gray-200 px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all flex items-center justify-center gap-2"
+                                   >
+                                       <ShoppingBag className="h-4 w-4" /> Add Full Protocol
+                                   </button>
+                               </div>
+                          </div>
+
                       </div>
                   </div>
               </div>

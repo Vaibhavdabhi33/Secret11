@@ -33,11 +33,11 @@ const Header: React.FC = () => {
           <div className="flex-shrink-0 flex items-center">
              <Link to="/" className="group flex items-center gap-2">
                <div className="relative">
-                 {/* Unified Logo Color with Glitch Effect on Hover */}
-                 <span className="relative text-2xl font-bold tracking-tight text-white transition-all font-sans glitch-hover">
+                 {/* Unified Colourful Logo with Glitch Effect on Hover */}
+                 <span className="relative text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 transition-all font-sans glitch-hover drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">
                   SECRET11
                  </span>
-                 <div className="absolute -bottom-1 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                 <div className="absolute -bottom-1 left-0 w-full h-[1px] bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                </div>
              </Link>
           </div>

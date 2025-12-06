@@ -19,6 +19,7 @@ import Marquee from './components/Marquee';
 import ScienceSection from './components/ScienceSection';
 import IngredientsGlossary from './components/IngredientsGlossary';
 import StickyMobileCart from './components/StickyMobileCart';
+import GalaxyBackground from './components/GalaxyBackground';
 
 const Home = () => (
     <>
@@ -61,6 +62,7 @@ const App: React.FC = () => {
         <Preloader onComplete={() => setLoading(false)} />
 
         <div className={`transition-opacity duration-1000 ${loading ? 'opacity-0' : 'opacity-100'}`}>
+            <GalaxyBackground />
             <Router>
             <UIEnhancements />
             <div className="min-h-screen bg-transparent text-white font-sans selection:bg-blue-600 selection:text-white pb-16 md:pb-0">

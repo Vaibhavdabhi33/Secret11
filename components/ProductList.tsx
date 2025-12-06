@@ -4,7 +4,7 @@ import { Search, Heart, Info, Star, Filter, ArrowRight, ShoppingBag, Check, X, F
 import { Product } from '../types';
 import { useCart } from '../contexts/CartContext';
 
-const products: Product[] = [
+export const products: Product[] = [
   {
     id: 1,
     name: "Niacinamide 10% Serum",
